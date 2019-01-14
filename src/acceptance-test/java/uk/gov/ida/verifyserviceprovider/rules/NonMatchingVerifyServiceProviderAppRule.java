@@ -9,7 +9,6 @@ import io.dropwizard.testing.junit.DropwizardAppRule;
 import keystore.KeyStoreResource;
 import keystore.builders.KeyStoreResourceBuilder;
 import org.joda.time.DateTime;
-import org.junit.After;
 import org.opensaml.core.config.InitializationService;
 import org.opensaml.saml.saml2.metadata.EntityDescriptor;
 import org.opensaml.saml.saml2.metadata.IDPSSODescriptor;
@@ -69,6 +68,25 @@ public class NonMatchingVerifyServiceProviderAppRule extends DropwizardAppRule<V
     public NonMatchingVerifyServiceProviderAppRule() {
         super(
             VerifyServiceProviderApplication.class,
+            "verify-service-provider-no-eidas.yml",
+            ConfigOverride.config("serviceEntityIds", TEST_RP),
+            ConfigOverride.config("hashingEntityId", "some-hashing-entity-id"),
+            ConfigOverride.config("server.connector.port", String.valueOf(0)),
+            ConfigOverride.config("logging.loggers.uk\\.gov", "DEBUG"),
+            ConfigOverride.config("samlSigningKey", TEST_RP_PRIVATE_SIGNING_KEY),
+            ConfigOverride.config("verifyHubConfiguration.environment", "COMPLIANCE_TOOL"),
+            ConfigOverride.config("verifyHubConfiguration.metadata.uri", () -> "http://localhost:" + verifyMetadataServer.getPort() + VERIFY_METADATA_PATH),
+            ConfigOverride.config("verifyHubConfiguration.metadata.trustStore.path", metadataTrustStore.getAbsolutePath()),
+            ConfigOverride.config("verifyHubConfiguration.metadata.trustStore.password", metadataTrustStore.getPassword()),
+            ConfigOverride.config("samlPrimaryEncryptionKey", TEST_RP_PRIVATE_ENCRYPTION_KEY),
+            ConfigOverride.config("msaMetadata.uri", msaServer::getUri),
+            ConfigOverride.config("msaMetadata.expectedEntityId", MockMsaServer.MSA_ENTITY_ID)
+        );
+    }
+
+    public NonMatchingVerifyServiceProviderAppRule(boolean isEidasEnabled) {
+        super(
+            VerifyServiceProviderApplication.class,
             "verify-service-provider.yml",
             ConfigOverride.config("serviceEntityIds", TEST_RP),
             ConfigOverride.config("hashingEntityId", "some-hashing-entity-id"),
@@ -83,7 +101,7 @@ public class NonMatchingVerifyServiceProviderAppRule extends DropwizardAppRule<V
             ConfigOverride.config("msaMetadata.uri", msaServer::getUri),
             ConfigOverride.config("msaMetadata.expectedEntityId", MockMsaServer.MSA_ENTITY_ID),
             ConfigOverride.config("europeanIdentity.hubConnectorEntityId", HUB_CONNECTOR_ENTITY_ID),
-            ConfigOverride.config("europeanIdentity.enabled", "true"),
+            ConfigOverride.config("europeanIdentity.enabled", isEidasEnabled ? "true" : "false"),
             ConfigOverride.config("europeanIdentity.aggregatedMetadata.trustAnchorUri", "http://localhost:" + trustAnchorServer.getPort() + TRUST_ANCHOR_PATH),
             ConfigOverride.config("europeanIdentity.aggregatedMetadata.metadataSourceUri", "http://localhost:" + metadataAggregatorServer.getPort() + METADATA_SOURCE_PATH),
             ConfigOverride.config("europeanIdentity.aggregatedMetadata.trustStore.store", countryMetadataTrustStore.getAbsolutePath()),

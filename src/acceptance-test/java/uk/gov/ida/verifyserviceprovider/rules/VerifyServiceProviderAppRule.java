@@ -23,8 +23,7 @@ public class VerifyServiceProviderAppRule extends DropwizardAppRule<VerifyServic
         KEY_STORE_RESOURCE.create();
     }
 
-
-    public VerifyServiceProviderAppRule(MockMsaServer msaServer, String secondaryEncryptionKey, String serviceEntityIdOverride) {
+    public VerifyServiceProviderAppRule(boolean isEidasEnabled, MockMsaServer msaServer, String secondaryEncryptionKey, String serviceEntityIdOverride) {
         super(
             VerifyServiceProviderApplication.class,
             "verify-service-provider.yml",
@@ -42,13 +41,21 @@ public class VerifyServiceProviderAppRule extends DropwizardAppRule<VerifyServic
                 return msaServer.getUri();
             }),
             ConfigOverride.config("msaMetadata.expectedEntityId", MockMsaServer.MSA_ENTITY_ID),
-            ConfigOverride.config("europeanIdentity.enabled", "false"),
+            ConfigOverride.config("europeanIdentity.enabled", isEidasEnabled ? "true" : "false"),
             ConfigOverride.config("europeanIdentity.hubConnectorEntityId", "dummyEntity"),
             ConfigOverride.config("europeanIdentity.aggregatedMetadata.trustAnchorUri", "http://dummy.com"),
             ConfigOverride.config("europeanIdentity.aggregatedMetadata.metadataSourceUri", "http://dummy.com"),
             ConfigOverride.config("europeanIdentity.aggregatedMetadata.trustStore.path", KEY_STORE_RESOURCE.getAbsolutePath()),
             ConfigOverride.config("europeanIdentity.aggregatedMetadata.trustStore.password", KEY_STORE_RESOURCE.getPassword())
         );
+    }
+
+    public VerifyServiceProviderAppRule(boolean isEidasEnabled, MockMsaServer msaServer) {
+        this(isEidasEnabled, msaServer, TEST_RP_PRIVATE_ENCRYPTION_KEY, "http://verify-service-provider");
+    }
+
+    public VerifyServiceProviderAppRule(MockMsaServer msaServer, String secondaryEncryptionKey, String serviceEntityIdOverride) {
+        this(false, msaServer, secondaryEncryptionKey, serviceEntityIdOverride);
     }
 
     public VerifyServiceProviderAppRule(MockMsaServer msaServer) {

@@ -25,64 +25,105 @@ import static uk.gov.ida.verifyserviceprovider.dto.NonMatchingScenario.IDENTITY_
 public class NonMatchingEidasAcceptanceTest {
 
     @ClassRule
-    public static NonMatchingVerifyServiceProviderAppRule application = new NonMatchingVerifyServiceProviderAppRule();
+    public static NonMatchingVerifyServiceProviderAppRule applicationWithoutEidasConfig = new NonMatchingVerifyServiceProviderAppRule();
+    @ClassRule
+    public static NonMatchingVerifyServiceProviderAppRule applicationWithEidasEnabled = new NonMatchingVerifyServiceProviderAppRule(true);
+    @ClassRule
+    public static NonMatchingVerifyServiceProviderAppRule applicationWithEidasDisabled = new NonMatchingVerifyServiceProviderAppRule(false);
 
     @Test
     public void shouldProcessEidasResponseCorrectly() throws MarshallingException, SignatureException {
-        String base64Response = new XmlObjectToBase64EncodedStringTransformer().apply(
-                aValidEidasResponse("requestId", application.getCountryEntityId()).build()
-        );
-        Response response = application.client().target(format("http://localhost:%s/translate-non-matching-response", application.getLocalPort())).request().post(
-                Entity.json(new TranslateSamlResponseBody(base64Response, "requestId", LEVEL_2, null))
-        );
+         String base64Response = new XmlObjectToBase64EncodedStringTransformer().apply(
+                 aValidEidasResponse("requestId", applicationWithEidasEnabled.getCountryEntityId()).build()
+         );
+         Response response = applicationWithEidasEnabled.client().target(format("http://localhost:%s/translate-non-matching-response", applicationWithEidasEnabled.getLocalPort())).request().post(
+                 Entity.json(new TranslateSamlResponseBody(base64Response, "requestId", LEVEL_2, null))
+         );
 
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
+         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
 
-        JSONObject responseBody = new JSONObject(response.readEntity(String.class));
-        assertThat(responseBody.getString("scenario")).isEqualTo(IDENTITY_VERIFIED.toString());
-        assertThat(responseBody.getString("pid")).isNotBlank();
-        assertThat(responseBody.getString("levelOfAssurance")).isEqualTo(LEVEL_2.toString());
-    }
+         JSONObject responseBody = new JSONObject(response.readEntity(String.class));
+         assertThat(responseBody.getString("scenario")).isEqualTo(IDENTITY_VERIFIED.toString());
+         assertThat(responseBody.getString("pid")).isNotBlank();
+         assertThat(responseBody.getString("levelOfAssurance")).isEqualTo(LEVEL_2.toString());
+     }
 
-    @Test
-    public void shouldReturn400WhenResponseContainsInvalidSignature() throws MarshallingException, SignatureException {
-        String base64Response = new XmlObjectToBase64EncodedStringTransformer().apply(
-                anInvalidSignatureEidasResponse("requestId", application.getCountryEntityId()).build()
-        );
-        Response response = application.client().target(format("http://localhost:%s/translate-non-matching-response", application.getLocalPort())).request().post(
-                Entity.json(new TranslateSamlResponseBody(base64Response, "requestId", LEVEL_2, null))
-        );
+     @Test
+     public void shouldReturn400WhenResponseContainsInvalidSignature() throws MarshallingException, SignatureException {
+         String base64Response = new XmlObjectToBase64EncodedStringTransformer().apply(
+                 anInvalidSignatureEidasResponse("requestId", applicationWithEidasEnabled.getCountryEntityId()).build()
+         );
+         Response response = applicationWithEidasEnabled.client().target(format("http://localhost:%s/translate-non-matching-response", applicationWithEidasEnabled.getLocalPort())).request().post(
+                 Entity.json(new TranslateSamlResponseBody(base64Response, "requestId", LEVEL_2, null))
+         );
 
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
+         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
 
-        String responseBody = response.readEntity(String.class);
-        assertThat(responseBody).contains("Signature was not valid.");
-    }
+         String responseBody = response.readEntity(String.class);
+         assertThat(responseBody).contains("Signature was not valid.");
+     }
 
-    @Test
-    public void shouldReturn400WhenAssertionContainsInvalidSignature() throws MarshallingException, SignatureException {
-        String base64Response = new XmlObjectToBase64EncodedStringTransformer().apply(
-                anInvalidAssertionSignatureEidasResponse("requestId", application.getCountryEntityId()).build()
-        );
-        Response response = application.client().target(format("http://localhost:%s/translate-non-matching-response", application.getLocalPort())).request().post(
-                Entity.json(new TranslateSamlResponseBody(base64Response, "requestId", LEVEL_2, null))
-        );
+     @Test
+     public void shouldReturn400WhenAssertionContainsInvalidSignature() throws MarshallingException, SignatureException {
+         String base64Response = new XmlObjectToBase64EncodedStringTransformer().apply(
+                 anInvalidAssertionSignatureEidasResponse("requestId", applicationWithEidasEnabled.getCountryEntityId()).build()
+         );
+         Response response = applicationWithEidasEnabled.client().target(format("http://localhost:%s/translate-non-matching-response", applicationWithEidasEnabled.getLocalPort())).request().post(
+                 Entity.json(new TranslateSamlResponseBody(base64Response, "requestId", LEVEL_2, null))
+         );
 
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
+         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
 
-        String responseBody = response.readEntity(String.class);
-        assertThat(responseBody).contains("Signature was not valid.");
-    }
+         String responseBody = response.readEntity(String.class);
+         assertThat(responseBody).contains("Signature was not valid.");
+     }
 
-    @Test
-    public void shouldReturn400WhenAssertionSignedByCountryNotInTrustAnchor() throws MarshallingException, SignatureException {
-        String base64Response = new XmlObjectToBase64EncodedStringTransformer().apply(
-                aValidEidasResponse("requestId", STUB_COUNTRY_ONE).build()
-        );
-        Response response = application.client().target(format("http://localhost:%s/translate-non-matching-response", application.getLocalPort())).request().post(
-                Entity.json(new TranslateSamlResponseBody(base64Response, "requestId", LEVEL_2, null))
-        );
+     @Test
+     public void shouldReturn400WhenAssertionSignedByCountryNotInTrustAnchor() throws MarshallingException, SignatureException {
+         String base64Response = new XmlObjectToBase64EncodedStringTransformer().apply(
+                 aValidEidasResponse("requestId", STUB_COUNTRY_ONE).build()
+         );
+         Response response = applicationWithEidasEnabled.client().target(format("http://localhost:%s/translate-non-matching-response", applicationWithEidasEnabled.getLocalPort())).request().post(
+                 Entity.json(new TranslateSamlResponseBody(base64Response, "requestId", LEVEL_2, null))
+         );
 
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
-    }
+         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
+     }
+
+     @Test
+     public void shouldReturn400ForEidasResponseWhenEuropeanIdentityConfigAbsent() throws Exception {
+         String base64Response = new XmlObjectToBase64EncodedStringTransformer().apply(
+             aValidEidasResponse("requestId", applicationWithEidasEnabled.getCountryEntityId()).build()
+         );
+         Response response = applicationWithoutEidasConfig.client().target(format("http://localhost:%s/translate-non-matching-response", applicationWithoutEidasConfig.getLocalPort())).request().post(
+             Entity.json(new TranslateSamlResponseBody(base64Response, "requestId", LEVEL_2, null))
+         );
+
+         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
+     }
+
+     @Test
+     public void shouldReturn400ForEidasResponseWhenEuropeanIdentityDisabled() throws Exception {
+         String base64Response = new XmlObjectToBase64EncodedStringTransformer().apply(
+             aValidEidasResponse("requestId", applicationWithEidasEnabled.getCountryEntityId()).build()
+         );
+         Response response = applicationWithEidasDisabled.client().target(format("http://localhost:%s/translate-non-matching-response", applicationWithEidasDisabled.getLocalPort())).request().post(
+             Entity.json(new TranslateSamlResponseBody(base64Response, "requestId", LEVEL_2, null))
+         );
+
+         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
+     }
+
+     @Test
+     public void shouldProcessEidasResponseCorrectlyWhenEuropeanIdentityEnabled() throws Exception {
+         String base64Response = new XmlObjectToBase64EncodedStringTransformer().apply(
+             aValidEidasResponse("requestId", applicationWithEidasEnabled.getCountryEntityId()).build()
+         );
+         Response response = applicationWithEidasEnabled.client().target(format("http://localhost:%s/translate-non-matching-response", applicationWithEidasEnabled.getLocalPort())).request().post(
+             Entity.json(new TranslateSamlResponseBody(base64Response, "requestId", LEVEL_2, null))
+         );
+
+         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
+     }
+
 }
