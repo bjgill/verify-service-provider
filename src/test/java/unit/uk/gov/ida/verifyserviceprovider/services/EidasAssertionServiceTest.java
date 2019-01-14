@@ -9,7 +9,7 @@ import org.opensaml.saml.saml2.core.Subject;
 import uk.gov.ida.saml.core.IdaSamlBootstrap;
 import uk.gov.ida.saml.core.test.builders.AssertionBuilder;
 import uk.gov.ida.saml.core.transformers.EidasMatchingDatasetUnmarshaller;
-import uk.gov.ida.saml.metadata.MetadataResolverRepository;
+import uk.gov.ida.saml.metadata.EidasMetadataResolverRepository;
 import uk.gov.ida.saml.security.SamlAssertionsSignatureValidator;
 import uk.gov.ida.verifyserviceprovider.dto.LevelOfAssurance;
 import uk.gov.ida.verifyserviceprovider.dto.NonMatchingAttributes;
@@ -72,7 +72,7 @@ public class EidasAssertionServiceTest {
     private LevelOfAssuranceValidator levelOfAssuranceValidator;
 
     @Mock
-    private MetadataResolverRepository metadataResolverRepository;
+    private EidasMetadataResolverRepository metadataResolverRepository;
 
     @Mock
     private SignatureValidatorFactory signatureValidatorFactory;
@@ -85,13 +85,14 @@ public class EidasAssertionServiceTest {
         IdaSamlBootstrap.bootstrap();
         initMocks(this);
         eidasAssertionService = new EidasAssertionService(
+            true,
             subjectValidator,
             eidasMatchingDatasetUnmarshaller,
             mdsMapper,
             instantValidator,
             conditionsValidator,
             levelOfAssuranceValidator,
-            metadataResolverRepository,
+            Optional.of(metadataResolverRepository),
             signatureValidatorFactory);
         doNothing().when(instantValidator).validate(any(), any());
         doNothing().when(subjectValidator).validate(any(), any());
